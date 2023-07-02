@@ -94,7 +94,15 @@ window.addEventListener("load", () => {
 
       // collision with obstacle
       this.game.obstacles.forEach((obstacle) => {
-        if (this.game.checkCollision(this, obstacle)) console.log("collision");
+        let [collision, distance, sumOfRadii, dx, dy] =
+          this.game.checkCollision(this, obstacle);
+        if (collision) {
+          // making the obstacles "solid"
+          const unit_x = dx / distance;
+          const unit_y = dy / distance;
+          this.collisionX = obstacle.collisionX + (sumOfRadii + 1) * unit_x;
+          this.collisionY = obstacle.collisionY + (sumOfRadii + 1) * unit_y;
+        }
       });
     }
   }
@@ -197,7 +205,9 @@ window.addEventListener("load", () => {
     checkCollision(a, b) {
       const dx = a.collisionX - b.collisionX;
       const dy = a.collisionY - b.collisionY;
-      return Math.hypot(dy, dx) <= a.collisionRadius + b.collisionRadius;
+      const distance = Math.hypot(dy, dx);
+      const sumOfRadii = a.collisionRadius + b.collisionRadius;
+      return [distance < sumOfRadii, distance, sumOfRadii, dx, dy];
     }
   }
 
@@ -219,14 +229,18 @@ window.addEventListener("load", () => {
 
       this.width = this.spriteWidth * this.scalingFactor; // the entire obstacle will be scaled to these values
       this.height = this.spriteHeight * this.scalingFactor;
+
+      // select the position of randomized obstacle
+      this.frameX = Math.floor(Math.random() * 4);
+      this.frameY = Math.floor(Math.random() * 3);
     }
     draw(context) {
       context.drawImage(
         this.image, // image file to use
-        0, // crop start x
-        0, // crop start y
-        this.spriteWidth, // crop end x
-        this.spriteHeight, // crop end y
+        this.frameX * 250, // crop start x
+        this.frameY * 250, // crop start y
+        this.spriteWidth, // crop distance in +x
+        this.spriteHeight, // crop distance in +y
         this.collisionX - this.width / 2, // position x
         this.collisionY - this.height / 2 - 40, // position y
         this.width, // final width
