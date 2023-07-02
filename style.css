@@ -20,6 +20,7 @@
   pointer-events: none; /* added so that it doesn't interfere with mouse event*/
 }
 
-#obstacle {
+#obstacle,
+#bull {
   display: none; /* to hide the obstacels */
 }
