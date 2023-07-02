@@ -37,37 +37,66 @@ window.addEventListener("load", () => {
       this.dy = 0;
 
       this.speedModifier = 5;
+
+      this.image = document.getElementById("bull"); // player character image
+
+      // player character properties
+      this.scalingFactor = 0.5 + 0.1;
+      this.spriteWidth = 255;
+      this.spriteHeight = 255;
+      this.width = this.spriteWidth * this.scalingFactor;
+      this.height = this.spriteHeight * this.scalingFactor;
+      this.spriteX = this.spriteWidth - this.width / 2; // player position in canvas
+      this.spriteY = this.spriteHeight - this.height / 2 - 50;
+
+      // character facing properties
+      this.frameX = 0;
+      this.frameY = 5;
     }
 
     // draw the shape in context
     draw(context) {
-      context.beginPath();
-
-      // draw an arc
-      context.arc(
-        this.collisionX,
-        this.collisionY,
-        this.collisionRadius,
-        0,
-        2 * Math.PI
+      context.drawImage(
+        this.image, // image source
+        this.frameX * this.spriteWidth, // crop start x
+        this.frameY * this.spriteHeight, // crop start y
+        this.spriteWidth, // crop size in +x
+        this.spriteHeight, // crop size in +y
+        this.spriteX, // position x in canvas
+        this.spriteY, // position y in canvas
+        this.width,
+        this.height
       );
 
-      // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
-      // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
-      // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
+      if (this.game.debug) {
+        context.beginPath();
 
-      context.save();
-      // opacity
-      context.globalAlpha = 0.2;
-      context.fill();
-      context.restore();
-      context.stroke();
+        // draw an arc
+        context.arc(
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
 
-      // draw a line pointing towards movement direction
-      context.beginPath();
-      context.moveTo(this.collisionX, this.collisionY);
-      context.lineTo(this.game.mouse.x, this.game.mouse.y);
-      context.stroke();
+        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
+        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
+        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
+
+        context.save();
+        // opacity
+        context.globalAlpha = 0.2;
+        context.fill();
+        context.restore();
+        context.stroke();
+
+        // draw a line pointing towards movement direction
+        context.beginPath();
+        context.moveTo(this.collisionX, this.collisionY);
+        context.lineTo(this.game.mouse.x, this.game.mouse.y);
+        context.stroke();
+      }
     }
 
     update() {
@@ -75,6 +104,17 @@ window.addEventListener("load", () => {
 
       this.dx = this.game.mouse.x - this.collisionX;
       this.dy = this.game.mouse.y - this.collisionY;
+
+      // sprite animation
+      const angle = Math.atan2(this.dy, this.dx);
+      if (angle < -2.74 || angle > 2.74) this.frameY = 6;
+      else if (angle < -1.96) this.frameY = 7;
+      else if (angle < -1.17) this.frameY = 0;
+      else if (angle < -0.39) this.frameY = 1;
+      else if (angle < 0.39) this.frameY = 2;
+      else if (angle < 1.17) this.frameY = 3;
+      else if (angle < 1.96) this.frameY = 4;
+      else if (angle < 2.74) this.frameY = 5;
 
       // technique 1 -> p controller
       // this.speedX = this.dx;
@@ -91,6 +131,10 @@ window.addEventListener("load", () => {
       }
       this.collisionX += this.speedX * this.speedModifier;
       this.collisionY += this.speedY * this.speedModifier;
+
+      // update player position
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 50;
 
       // collision with obstacle
       this.game.obstacles.forEach((obstacle) => {
@@ -117,6 +161,8 @@ window.addEventListener("load", () => {
       this.width = this.canvas.width;
       // instance of the Player object
       this.player = new Player(this);
+
+      this.debug = false; // debugging
 
       // mouse properties
       this.mouse = {
@@ -153,6 +199,11 @@ window.addEventListener("load", () => {
           this.mouse.x = e.offsetX;
           this.mouse.y = e.offsetY;
         }
+      });
+
+      // debug
+      window.addEventListener("keydown", (e) => {
+        if (e.key == "d") this.debug = !this.debug;
       });
     }
 
@@ -246,27 +297,30 @@ window.addEventListener("load", () => {
         this.width, // final width
         this.height // final height
       );
-      context.beginPath();
 
-      // draw a circle
-      context.arc(
-        this.collisionX,
-        this.collisionY,
-        this.collisionRadius,
-        0,
-        2 * Math.PI
-      );
+      if (this.game.debug) {
+        context.beginPath();
 
-      // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
-      // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
-      // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
+        // draw a circle
+        context.arc(
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
 
-      context.save();
-      // opacity
-      context.globalAlpha = 0.2;
-      context.fill();
-      context.restore();
-      context.stroke();
+        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
+        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
+        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
+
+        context.save();
+        // opacity
+        context.globalAlpha = 0.2;
+        context.fill();
+        context.restore();
+        context.stroke();
+      }
     }
   }
 
