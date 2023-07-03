@@ -21,6 +21,7 @@
 }
 
 #obstacle,
-#bull {
+#bull,
+#egg {
   display: none; /* to hide the obstacels */
 }

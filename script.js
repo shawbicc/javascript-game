@@ -136,6 +136,20 @@ window.addEventListener("load", () => {
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 50;
 
+      // horizontal boundaries
+      if (this.collisionX < this.collisionRadius) {
+        this.collisionX = this.collisionRadius;
+      } else if (this.collisionX > this.game.width - this.collisionRadius) {
+        this.collisionX = this.game.width - this.collisionRadius;
+      }
+
+      // vertical boundaries
+      if (this.collisionY < this.collisionRadius + this.game.topMargin) {
+        this.collisionY = this.collisionRadius + this.game.topMargin;
+      } else if (this.collisionY > this.game.height - this.collisionRadius) {
+        this.collisionY = this.game.height - this.collisionRadius;
+      }
+
       // collision with obstacle
       this.game.obstacles.forEach((obstacle) => {
         let [collision, distance, sumOfRadii, dx, dy] =
@@ -146,6 +160,81 @@ window.addEventListener("load", () => {
           const unit_y = dy / distance;
           this.collisionX = obstacle.collisionX + (sumOfRadii + 1) * unit_x;
           this.collisionY = obstacle.collisionY + (sumOfRadii + 1) * unit_y;
+        }
+      });
+    }
+  }
+
+  // Egg object
+  class Egg {
+    constructor(game) {
+      this.game = game;
+      this.collisionRadius = 40;
+      this.margin = this.collisionRadius * 2;
+      this.collisionX =
+        this.margin + Math.random() * (this.game.width - this.margin * 2);
+      this.collisionY =
+        this.game.topMargin +
+        Math.random() * (this.game.height - this.game.topMargin - this.margin);
+      this.image = document.getElementById("egg");
+      this.spriteWidth = 110; // image drawing start position on canvas
+      this.spriteHeight = 135;
+      this.scalingFactor = 0.3;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.spriteX;
+      this.spriteY;
+    }
+
+    draw(context) {
+      // draw egg image
+      context.drawImage(this.image, this.spriteX, this.spriteY);
+
+      // debugging
+      if (this.game.debug) {
+        context.beginPath();
+
+        // draw an arc
+        context.arc(
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
+
+        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
+        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
+        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
+
+        context.save();
+        // opacity
+        context.globalAlpha = 0.2;
+        context.fill();
+        context.restore();
+        context.stroke();
+
+        // draw a line pointing towards movement direction
+        // context.beginPath();
+        // context.moveTo(this.collisionX, this.collisionY);
+        // context.lineTo(this.game.mouse.x, this.game.mouse.y);
+        // context.stroke();
+      }
+    }
+
+    // update method
+    update() {
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 20;
+      let collisionObjects = [this.game.player, ...this.game.obstacles];
+      collisionObjects.forEach((object) => {
+        let [collision, distance, sumOfRadii, dx, dy] =
+          this.game.checkCollision(this, object);
+        if (collision) {
+          const unit_x = dx / distance;
+          const unit_y = dy / distance;
+          this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+          this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
         }
       });
     }
@@ -176,6 +265,18 @@ window.addEventListener("load", () => {
       this.numberOfObstacles = 10;
       this.obstacles = [];
       this.topMargin = 260; // top margin
+
+      // fps control
+      this.fps = 70;
+      this.timer = 0;
+      this.interval = 1000 / this.fps;
+
+      // egg properties
+      this.eggs = [];
+      this.maxEggs = 10;
+      this.eggTimer = 0;
+      this.eggInterval = 500; // interval (ms) for eggs to spawn
+
       // event listeners
 
       // mousedown event
@@ -208,10 +309,31 @@ window.addEventListener("load", () => {
     }
 
     // render -> draw the graphics in the context
-    render(context) {
-      this.player.draw(context);
-      this.player.update();
-      this.obstacles.forEach((obstacle) => obstacle.draw(context));
+    render(context, deltaTime) {
+      if (this.timer > this.interval) {
+        // render a frame
+        context.clearRect(0, 0, this.width, this.height);
+        this.player.draw(context);
+        this.player.update();
+        this.obstacles.forEach((obstacle) => obstacle.draw(context));
+        this.eggs.forEach((egg) => {
+          egg.draw(context);
+          egg.update();
+        });
+        this.timer = 0;
+      }
+      this.timer += deltaTime;
+
+      // add eggs periodically
+      if (this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs) {
+        this.addEgg();
+        this.eggTimer = 0;
+      } else this.eggTimer += deltaTime;
+    }
+
+    // add eggs
+    addEgg() {
+      this.eggs.push(new Egg(this));
     }
 
     // create randomized obstacles
@@ -221,7 +343,6 @@ window.addEventListener("load", () => {
       // try to generate obstacles without overlapping
       while (this.obstacles.length < this.numberOfObstacles && attempts < 500) {
         let testObstacles = new Obstacle(this);
-        console.log(testObstacles);
         this.obstacles.forEach((obstacle) => {
           const distance = Math.sqrt(
             // distance between the testObstacle and iterating obstacle
@@ -327,17 +448,17 @@ window.addEventListener("load", () => {
   // initiate game with Game object
   const game = new Game(canvas);
   game.init(); // initaite obstacles
-  console.log(game);
 
+  let lastTime = 0;
   // animation handling
-  function animate() {
-    //clear previous contexts
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  function animate(timeStamp) {
+    const deltaTime = timeStamp - lastTime; // time interval (ms) between frames
+    lastTime = timeStamp;
     // render the context
-    game.render(ctx);
+    game.render(ctx, deltaTime);
     window.requestAnimationFrame(animate);
   }
 
   // call the animation function
-  animate();
+  animate(0);
 });
