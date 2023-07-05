@@ -277,6 +277,9 @@ window.addEventListener("load", () => {
       this.eggTimer = 0;
       this.eggInterval = 500; // interval (ms) for eggs to spawn
 
+      // game objects
+      this.gameObjects = [];
+
       // event listeners
 
       // mousedown event
@@ -313,12 +316,19 @@ window.addEventListener("load", () => {
       if (this.timer > this.interval) {
         // render a frame
         context.clearRect(0, 0, this.width, this.height);
-        this.player.draw(context);
-        this.player.update();
-        this.obstacles.forEach((obstacle) => obstacle.draw(context));
-        this.eggs.forEach((egg) => {
-          egg.draw(context);
-          egg.update();
+
+        // sequence of rendering
+        this.gameObjects = [...this.eggs, ...this.obstacles, this.player];
+        // sort by vertical position
+        this.gameObjects.sort((a, b) => {
+          if (a.collisionY < b.collisionY) return -1;
+          else if (a.collisionY > b.collisionY) return 1;
+          else return 0;
+        });
+        // render the sorted objects
+        this.gameObjects.forEach((object) => {
+          object.draw(context);
+          object.update();
         });
         this.timer = 0;
       }
@@ -443,6 +453,8 @@ window.addEventListener("load", () => {
         context.stroke();
       }
     }
+
+    update() {}
   }
 
   // initiate game with Game object
