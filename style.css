@@ -23,6 +23,7 @@
 #obstacle,
 #bull,
 #egg,
-#toad {
+#toad,
+#larva {
   display: none; /* to hide the obstacels */
 }
