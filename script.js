@@ -496,14 +496,26 @@ window.addEventListener("load", () => {
         this.game.topMargin +
         Math.random() * (this.game.height - this.game.topMargin);
       this.speedX = Math.random() * 3 + 0.5; // speed between 0.5 and 3.5
-      this.image = document.getElementById("toad");
+      this.image = document.getElementById("toads");
       this.spriteX;
       this.spriteY;
       this.scalingFactor = 0.3;
+      this.frameX = 0;
+      this.frameY = Math.floor(Math.random() * 4);
     }
 
     draw(context) {
-      context.drawImage(this.image, this.spriteX, this.spriteY);
+      context.drawImage(
+        this.image,
+        this.frameX * this.spriteWidth,
+        this.frameY * this.spriteHeight,
+        this.spriteWidth,
+        this.spriteHeight,
+        this.spriteX,
+        this.spriteY,
+        this.width,
+        this.height
+      );
 
       if (this.game.debug) {
         // draw circle in debug mode
@@ -528,12 +540,14 @@ window.addEventListener("load", () => {
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 80;
       this.collisionX -= this.speedX;
+      // update after enemy passes the screen completely
       if (this.spriteX + this.width < 0) {
         this.collisionX =
           this.game.width + this.width + (Math.random() * this.game.width) / 2;
         this.collisionY =
           this.game.topMargin +
           Math.random() * (this.game.height - this.game.topMargin);
+        this.frameY = Math.floor(Math.random() * 4);
       }
       // check collision with obstacles and player only
       let collisionObjects = [...this.game.obstacles, this.game.player];

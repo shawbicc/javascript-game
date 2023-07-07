@@ -24,6 +24,7 @@
 #bull,
 #egg,
 #toad,
-#larva {
+#larva,
+#toads {
   display: none; /* to hide the obstacels */
 }
