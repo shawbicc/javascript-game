@@ -10,6 +10,8 @@ window.addEventListener("load", () => {
   ctx.fillStyle = "white"; // fill color of the shape drawn
   ctx.lineWidth = 3; // stroke width
   ctx.strokeStyle = "white"; // stroke color
+  ctx.font = "40px Roboto";
+  ctx.textAlign = "center";
 
   // Player object
   class Player {
@@ -162,6 +164,10 @@ window.addEventListener("load", () => {
       this.height = this.spriteHeight;
       this.spriteX;
       this.spriteY;
+
+      this.hatchTimer = 0; // timer for egg to hatch and produce larva
+      this.hatchInterval = 5000; // ms time interval between hatches
+      this.markedForDeletion = false; // if marked, the egg will be removed and a larva will be placed
     }
 
     draw(context) {
@@ -183,10 +189,16 @@ window.addEventListener("load", () => {
         context.fill();
         context.restore();
         context.stroke();
+        const displayTimer = this.hatchTimer.toFixed(0); // display the time interval
+        context.fillText(
+          displayTimer,
+          this.collisionX,
+          this.collisionY - this.collisionRadius * 2.5
+        );
       }
     }
 
-    update() {
+    update(deltaTime) {
       // update method
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 20;
@@ -207,6 +219,18 @@ window.addEventListener("load", () => {
           this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
         }
       });
+
+      // hatching
+      if (this.hatchTimer > this.hatchInterval) {
+        // remove egg and place larva
+        this.markedForDeletion = true;
+        this.game.removeGameObjects();
+        this.game.hatchlings.push(
+          new Larva(this.game, this.collisionX, this.collisionY)
+        );
+      } else {
+        this.hatchTimer += deltaTime;
+      }
     }
   }
 
@@ -241,6 +265,7 @@ window.addEventListener("load", () => {
       this.maxEggs = 10;
       this.eggTimer = 0;
       this.eggInterval = 500; // interval (ms) for eggs to spawn
+      this.hatchlings = [];
 
       // enemy properties
       this.enemies = [];
@@ -288,6 +313,7 @@ window.addEventListener("load", () => {
           ...this.obstacles,
           this.player,
           ...this.enemies,
+          ...this.hatchlings,
         ]; // sequence of rendering
         this.gameObjects.sort((a, b) => {
           // sort by vertical position
@@ -298,7 +324,7 @@ window.addEventListener("load", () => {
         this.gameObjects.forEach((object) => {
           // render the sorted objects
           object.draw(context);
-          object.update();
+          object.update(deltaTime);
         });
         this.timer = 0;
       }
@@ -371,6 +397,14 @@ window.addEventListener("load", () => {
       const distance = Math.hypot(dy, dx);
       const sumOfRadii = a.collisionRadius + b.collisionRadius;
       return [distance < sumOfRadii, distance, sumOfRadii, dx, dy];
+    }
+
+    // remove object from game
+    removeGameObjects() {
+      this.eggs = this.eggs.filter((egg) => egg.markedForDeletion == false);
+      this.hatchlings = this.hatchlings.filter(
+        (larva) => larva.markedForDeletion == false
+      );
     }
   }
 
@@ -490,6 +524,69 @@ window.addEventListener("load", () => {
           this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
         }
       });
+    }
+  }
+
+  // larva class
+  class Larva {
+    constructor(game, x, y) {
+      this.game = game;
+      this.collisionX = x;
+      this.collisionY = y;
+      this.collisionRadius = 30;
+      this.image = document.getElementById("larva");
+      this.spriteWidth = 150;
+      this.spriteHeight = 150;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.spriteX;
+      this.spriteY;
+      this.speedY = 1 + Math.random();
+      this.markedForDeletion = false;
+    }
+
+    draw(context) {
+      context.drawImage(
+        this.image,
+        0,
+        0,
+        this.spriteWidth,
+        this.spriteHeight,
+        this.spriteX,
+        this.spriteY,
+        this.width,
+        this.height
+      );
+
+      if (this.game.debug) {
+        // draw circle in debug mode
+        context.beginPath();
+        context.arc(
+          // draw an arc
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
+        context.save();
+        context.globalAlpha = 0.2; // opacity
+        context.fill();
+        context.restore();
+        context.stroke();
+      }
+    }
+
+    update() {
+      this.collisionY -= this.speedY;
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 50;
+
+      // move to safety
+      if (this.collisionY < this.game.topMargin) {
+        this.markedForDeletion = true;
+        this.game.removeGameObjects();
+      }
     }
   }
 
