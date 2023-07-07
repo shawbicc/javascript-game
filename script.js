@@ -189,7 +189,7 @@ window.addEventListener("load", () => {
         context.fill();
         context.restore();
         context.stroke();
-        const displayTimer = this.hatchTimer.toFixed(0); // display the time interval
+        const displayTimer = (this.hatchTimer / 1000).toFixed(0); // display the time interval
         context.fillText(
           displayTimer,
           this.collisionX,
@@ -242,6 +242,7 @@ window.addEventListener("load", () => {
       this.width = this.canvas.width;
       this.player = new Player(this); // instance of the Player object
       this.debug = true; // debugging
+      this.score = 0;
 
       this.mouse = {
         // mouse properties
@@ -266,6 +267,7 @@ window.addEventListener("load", () => {
       this.eggTimer = 0;
       this.eggInterval = 500; // interval (ms) for eggs to spawn
       this.hatchlings = [];
+      this.lostHatchlings = 0;
 
       // enemy properties
       this.enemies = [];
@@ -335,6 +337,16 @@ window.addEventListener("load", () => {
         this.addEgg();
         this.eggTimer = 0;
       } else this.eggTimer += deltaTime;
+
+      // draw status text
+      context.save();
+      context.textAlign = "left";
+      context.fillText("Score: " + this.score, 25, 50);
+      if (this.debug) {
+        // show lost larva count when debugging
+        context.fillText("Lost: " + this.lostHatchlings, 25, 100);
+      }
+      context.restore();
     }
 
     addEgg() {
@@ -543,13 +555,15 @@ window.addEventListener("load", () => {
       this.spriteY;
       this.speedY = 1 + Math.random();
       this.markedForDeletion = false;
+      this.frameX = 0;
+      this.frameY = Math.floor(Math.random() * 2);
     }
 
     draw(context) {
       context.drawImage(
         this.image,
-        0,
-        0,
+        this.frameX * this.spriteWidth,
+        this.frameY * this.spriteHeight,
         this.spriteWidth,
         this.spriteHeight,
         this.spriteX,
@@ -586,7 +600,29 @@ window.addEventListener("load", () => {
       if (this.collisionY < this.game.topMargin) {
         this.markedForDeletion = true;
         this.game.removeGameObjects();
+        this.game.score++;
       }
+
+      // check collision with player, obstacles
+      let collisionObjects = [this.game.player, ...this.game.obstacles];
+      collisionObjects.forEach((object) => {
+        let [collision, distance, sumOfRadii, dx, dy] =
+          this.game.checkCollision(this, object);
+        if (collision) {
+          const unit_x = dx / distance;
+          const unit_y = dy / distance;
+          this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+          this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
+        }
+      });
+      this.game.enemies.forEach((enemy) => {
+        // collision with enemies
+        if (this.game.checkCollision(this, enemy)[0]) {
+          this.markedForDeletion = true; // if collided with enemy, larva gets eaten
+          this.game.removeGameObjects();
+          this.game.lostHatchlings++; // increases lost larva count
+        }
+      });
     }
   }
 
