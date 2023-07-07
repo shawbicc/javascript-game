@@ -190,7 +190,13 @@ window.addEventListener("load", () => {
       // update method
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 20;
-      let collisionObjects = [this.game.player, ...this.game.obstacles];
+
+      // check collision with player, obstacles and enemies
+      let collisionObjects = [
+        this.game.player,
+        ...this.game.obstacles,
+        ...this.game.enemies,
+      ];
       collisionObjects.forEach((object) => {
         let [collision, distance, sumOfRadii, dx, dy] =
           this.game.checkCollision(this, object);
@@ -211,7 +217,7 @@ window.addEventListener("load", () => {
       this.height = this.canvas.height; // height and width of the game
       this.width = this.canvas.width;
       this.player = new Player(this); // instance of the Player object
-      this.debug = false; // debugging
+      this.debug = true; // debugging
 
       this.mouse = {
         // mouse properties
@@ -235,6 +241,9 @@ window.addEventListener("load", () => {
       this.maxEggs = 10;
       this.eggTimer = 0;
       this.eggInterval = 500; // interval (ms) for eggs to spawn
+
+      // enemy properties
+      this.enemies = [];
 
       // game objects
       this.gameObjects = [];
@@ -274,7 +283,12 @@ window.addEventListener("load", () => {
       if (this.timer > this.interval) {
         context.clearRect(0, 0, this.width, this.height); // clear the canvas
 
-        this.gameObjects = [...this.eggs, ...this.obstacles, this.player]; // sequence of rendering
+        this.gameObjects = [
+          ...this.eggs,
+          ...this.obstacles,
+          this.player,
+          ...this.enemies,
+        ]; // sequence of rendering
         this.gameObjects.sort((a, b) => {
           // sort by vertical position
           if (a.collisionY < b.collisionY) return -1;
@@ -302,7 +316,17 @@ window.addEventListener("load", () => {
       this.eggs.push(new Egg(this));
     }
 
+    addEnemy() {
+      // add enemies
+      this.enemies.push(new Enemy(this));
+    }
+
     init() {
+      // create enemies
+      for (let i = 0; i < 3; i++) {
+        this.addEnemy();
+      }
+
       // create randomized obstacles
       let attempts = 0;
       let isOverlapping = false; // flag for checking overlaps
@@ -398,6 +422,75 @@ window.addEventListener("load", () => {
     }
 
     update() {}
+  }
+
+  // enemy object
+  class Enemy {
+    constructor(game) {
+      this.game = game;
+      this.spriteWidth = 140;
+      this.spriteHeight = 260;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionRadius = 30;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
+      this.collisionY =
+        this.game.topMargin +
+        Math.random() * (this.game.height - this.game.topMargin);
+      this.speedX = Math.random() * 3 + 0.5; // speed between 0.5 and 3.5
+      this.image = document.getElementById("toad");
+      this.spriteX;
+      this.spriteY;
+      this.scalingFactor = 0.3;
+    }
+
+    draw(context) {
+      context.drawImage(this.image, this.spriteX, this.spriteY);
+
+      if (this.game.debug) {
+        // draw circle in debug mode
+        context.beginPath();
+        context.arc(
+          // draw an arc
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
+        context.save();
+        context.globalAlpha = 0.2; // opacity
+        context.fill();
+        context.restore();
+        context.stroke();
+      }
+    }
+
+    update() {
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 80;
+      this.collisionX -= this.speedX;
+      if (this.spriteX + this.width < 0) {
+        this.collisionX =
+          this.game.width + this.width + (Math.random() * this.game.width) / 2;
+        this.collisionY =
+          this.game.topMargin +
+          Math.random() * (this.game.height - this.game.topMargin);
+      }
+      // check collision with obstacles and player only
+      let collisionObjects = [...this.game.obstacles, this.game.player];
+      collisionObjects.forEach((object) => {
+        let [collision, distance, sumOfRadii, dx, dy] =
+          this.game.checkCollision(this, object);
+        if (collision) {
+          const unit_x = dx / distance;
+          const unit_y = dy / distance;
+          this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+          this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
+        }
+      });
+    }
   }
 
   const game = new Game(canvas); // initiate game with Game object

@@ -22,6 +22,7 @@
 
 #obstacle,
 #bull,
-#egg {
+#egg,
+#toad {
   display: none; /* to hide the obstacels */
 }
