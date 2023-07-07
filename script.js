@@ -9,7 +9,7 @@ window.addEventListener("load", () => {
   // context properties
   ctx.fillStyle = "white"; // fill color of the shape drawn
   ctx.lineWidth = 3; // stroke width
-  ctx.strokeStyle = "white"; // stroke color
+  ctx.strokeStyle = "black"; // stroke color
   ctx.font = "40px Roboto";
   ctx.textAlign = "center";
 
@@ -221,7 +221,10 @@ window.addEventListener("load", () => {
       });
 
       // hatching
-      if (this.hatchTimer > this.hatchInterval) {
+      if (
+        this.hatchTimer > this.hatchInterval ||
+        this.collisionY < this.game.topMargin
+      ) {
         // remove egg and place larva
         this.markedForDeletion = true;
         this.game.removeGameObjects();
@@ -275,6 +278,9 @@ window.addEventListener("load", () => {
       // game objects
       this.gameObjects = [];
 
+      // animation particle properties
+      this.particles = [];
+
       // event listeners
       window.addEventListener("mousedown", (e) => {
         // mousedown event
@@ -311,11 +317,13 @@ window.addEventListener("load", () => {
         context.clearRect(0, 0, this.width, this.height); // clear the canvas
 
         this.gameObjects = [
+          // objects in the game
           ...this.eggs,
           ...this.obstacles,
           this.player,
           ...this.enemies,
           ...this.hatchlings,
+          ...this.particles,
         ]; // sequence of rendering
         this.gameObjects.sort((a, b) => {
           // sort by vertical position
@@ -416,6 +424,9 @@ window.addEventListener("load", () => {
       this.eggs = this.eggs.filter((egg) => egg.markedForDeletion == false);
       this.hatchlings = this.hatchlings.filter(
         (larva) => larva.markedForDeletion == false
+      );
+      this.particles = this.particles.filter(
+        (particle) => particle.markedForDeletion == false
       );
     }
   }
@@ -601,6 +612,13 @@ window.addEventListener("load", () => {
         this.markedForDeletion = true;
         this.game.removeGameObjects();
         this.game.score++;
+
+        // add firefly animation
+        for (let i = 0; i < 4; i++) {
+          this.game.particles.push(
+            new Firefly(this.game, this.collisionX, this.collisionY, "yellow")
+          );
+        }
       }
 
       // check collision with player, obstacles
@@ -621,8 +639,75 @@ window.addEventListener("load", () => {
           this.markedForDeletion = true; // if collided with enemy, larva gets eaten
           this.game.removeGameObjects();
           this.game.lostHatchlings++; // increases lost larva count
+          // add spark animation
+          for (let i = 0; i < 4; i++) {
+            this.game.particles.push(
+              new Spark(this.game, this.collisionX, this.collisionY, "red")
+            );
+          }
         }
       });
+    }
+  }
+
+  // particle effect
+  class Particle {
+    constructor(game, x, y, color) {
+      this.game = game;
+      this.collisionX = x;
+      this.collisionY = y;
+      this.color = color;
+      this.radius = Math.floor(Math.random() * 15) + 5;
+      this.speedX = Math.random() * 6 - 3; // bubble speed
+      this.speedY = Math.random() * 2 + 0.5;
+      this.angle = 0;
+      this.va = Math.random() * 0.1 + 0.01;
+      this.markedForDeletion = false;
+    }
+
+    draw(context) {
+      context.save();
+      context.fillStyle = this.color;
+      context.beginPath();
+      context.arc(
+        this.collisionX,
+        this.collisionY,
+        this.radius,
+        0,
+        Math.PI * 2
+      );
+      context.fill();
+      context.stroke();
+      context.restore();
+    }
+  }
+
+  // firefly effect
+  class Firefly extends Particle {
+    // draw() will be inherited
+    update() {
+      this.angle += this.va;
+      this.collisionX += Math.cos(this.angle) * this.speedX;
+      this.collisionY -= this.speedY;
+      if (this.collisionY < 0 - this.radius) {
+        this.markedForDeletion = true;
+        this.game.removeGameObjects();
+      }
+    }
+  }
+
+  // spark effect
+  class Spark extends Particle {
+    // draw() will be inherited
+    update() {
+      this.angle += this.va * 0.5;
+      this.collisionX -= Math.cos(this.angle) * this.speedX;
+      this.collisionY -= Math.sin(this.angle) * this.speedY;
+      if (this.radius > 0.1) this.radius -= 0.05;
+      if (this.radius < 0.2) {
+        this.markedForDeletion = true;
+        this.game.removeGameObjects();
+      }
     }
   }
 
