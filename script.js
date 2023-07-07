@@ -1,46 +1,33 @@
-// window element will initiate game when loaded
 window.addEventListener("load", () => {
-  // canvas where the game will start
-  const canvas = document.getElementById("canvas1");
+  // window element will initiate game when loaded
 
-  // context (idk what this is but its important)
-  const ctx = canvas.getContext("2d");
-
-  // canvas height and width
-  canvas.width = 1280;
+  const canvas = document.getElementById("canvas1"); // canvas where the game will start
+  const ctx = canvas.getContext("2d"); // context (idk what this is but its important)
+  canvas.width = 1280; // canvas height and width
   canvas.height = 720;
 
   // context properties
-
-  // fill color of the shape drawn
-  ctx.fillStyle = "white";
-  // stroke width
-  ctx.lineWidth = 3;
-  // stroke color
-  ctx.strokeStyle = "white";
+  ctx.fillStyle = "white"; // fill color of the shape drawn
+  ctx.lineWidth = 3; // stroke width
+  ctx.strokeStyle = "white"; // stroke color
 
   // Player object
   class Player {
     constructor(game) {
-      // Player object gets an instance of the Game object
-      this.game = game;
+      this.game = game; // Player object gets an instance of the Game object
 
       // properties of the hitbox area
       this.collisionX = this.game.width / 2;
       this.collisionY = this.game.height / 2;
       this.collisionRadius = 30;
-      // speed along x axis
-      this.speedX = 0;
+      this.speedX = 0; // speed
       this.speedY = 0;
-      // target pose - current pose
-      this.dx = 0;
+      this.dx = 0; // target pose - current pose
       this.dy = 0;
-
-      this.speedModifier = 5;
-
+      this.speedModifier = 5; // speed modifier
       this.image = document.getElementById("bull"); // player character image
 
-      // player character properties
+      // player character image properties
       this.scalingFactor = 0.5 + 0.1;
       this.spriteWidth = 255;
       this.spriteHeight = 255;
@@ -54,8 +41,8 @@ window.addEventListener("load", () => {
       this.frameY = 5;
     }
 
-    // draw the shape in context
     draw(context) {
+      // draw the shape in context
       context.drawImage(
         this.image, // image source
         this.frameX * this.spriteWidth, // crop start x
@@ -69,24 +56,18 @@ window.addEventListener("load", () => {
       );
 
       if (this.game.debug) {
+        // draw circle in debug mode
         context.beginPath();
-
-        // draw an arc
         context.arc(
+          // draw an arc
           this.collisionX,
           this.collisionY,
           this.collisionRadius,
           0,
           2 * Math.PI
         );
-
-        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
-        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
-        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
-
         context.save();
-        // opacity
-        context.globalAlpha = 0.2;
+        context.globalAlpha = 0.2; // opacity
         context.fill();
         context.restore();
         context.stroke();
@@ -101,10 +82,8 @@ window.addEventListener("load", () => {
 
     update() {
       // setting player position to mouse position
-
       this.dx = this.game.mouse.x - this.collisionX;
       this.dy = this.game.mouse.y - this.collisionY;
-
       // sprite animation
       const angle = Math.atan2(this.dy, this.dx);
       if (angle < -2.74 || angle > 2.74) this.frameY = 6;
@@ -132,26 +111,25 @@ window.addEventListener("load", () => {
       this.collisionX += this.speedX * this.speedModifier;
       this.collisionY += this.speedY * this.speedModifier;
 
-      // update player position
-      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteX = this.collisionX - this.width / 2; // update player position
       this.spriteY = this.collisionY - this.height / 2 - 50;
 
-      // horizontal boundaries
       if (this.collisionX < this.collisionRadius) {
+        // horizontal boundaries
         this.collisionX = this.collisionRadius;
       } else if (this.collisionX > this.game.width - this.collisionRadius) {
         this.collisionX = this.game.width - this.collisionRadius;
       }
 
-      // vertical boundaries
       if (this.collisionY < this.collisionRadius + this.game.topMargin) {
+        // vertical boundaries
         this.collisionY = this.collisionRadius + this.game.topMargin;
       } else if (this.collisionY > this.game.height - this.collisionRadius) {
         this.collisionY = this.game.height - this.collisionRadius;
       }
 
-      // collision with obstacle
       this.game.obstacles.forEach((obstacle) => {
+        // collision with obstacle
         let [collision, distance, sumOfRadii, dx, dy] =
           this.game.checkCollision(this, obstacle);
         if (collision) {
@@ -187,46 +165,38 @@ window.addEventListener("load", () => {
     }
 
     draw(context) {
-      // draw egg image
-      context.drawImage(this.image, this.spriteX, this.spriteY);
+      context.drawImage(this.image, this.spriteX, this.spriteY); // draw egg image
 
-      // debugging
       if (this.game.debug) {
+        // debugging
         context.beginPath();
-
-        // draw an arc
         context.arc(
+          // draw an arc
           this.collisionX,
           this.collisionY,
           this.collisionRadius,
           0,
           2 * Math.PI
         );
-
-        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
-        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
-        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
-
         context.save();
-        // opacity
-        context.globalAlpha = 0.2;
+        context.globalAlpha = 0.2; // opacity
         context.fill();
         context.restore();
         context.stroke();
-
-        // draw a line pointing towards movement direction
-        // context.beginPath();
-        // context.moveTo(this.collisionX, this.collisionY);
-        // context.lineTo(this.game.mouse.x, this.game.mouse.y);
-        // context.stroke();
       }
     }
 
-    // update method
     update() {
+      // update method
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 20;
-      let collisionObjects = [this.game.player, ...this.game.obstacles];
+
+      // check collision with player, obstacles and enemies
+      let collisionObjects = [
+        this.game.player,
+        ...this.game.obstacles,
+        ...this.game.enemies,
+      ];
       collisionObjects.forEach((object) => {
         let [collision, distance, sumOfRadii, dx, dy] =
           this.game.checkCollision(this, object);
@@ -243,25 +213,20 @@ window.addEventListener("load", () => {
   // Game object
   class Game {
     constructor(canvas) {
-      // canvas of the game
-      this.canvas = canvas;
-      // height and width of the game
-      this.height = this.canvas.height;
+      this.canvas = canvas; // canvas of the game
+      this.height = this.canvas.height; // height and width of the game
       this.width = this.canvas.width;
-      // instance of the Player object
-      this.player = new Player(this);
+      this.player = new Player(this); // instance of the Player object
+      this.debug = true; // debugging
 
-      this.debug = false; // debugging
-
-      // mouse properties
       this.mouse = {
-        // initial mouse position
-        x: this.width / 2,
+        // mouse properties
+        x: this.width / 2, // initial mouse position
         y: this.height / 2,
         pressed: false,
       };
 
-      // obstacles
+      // obstacles properties
       this.numberOfObstacles = 10;
       this.obstacles = [];
       this.topMargin = 260; // top margin
@@ -277,24 +242,29 @@ window.addEventListener("load", () => {
       this.eggTimer = 0;
       this.eggInterval = 500; // interval (ms) for eggs to spawn
 
-      // event listeners
+      // enemy properties
+      this.enemies = [];
 
-      // mousedown event
+      // game objects
+      this.gameObjects = [];
+
+      // event listeners
       window.addEventListener("mousedown", (e) => {
+        // mousedown event
         this.mouse.x = e.offsetX; // offsetX -> coords when origin is at the top-left corner of the canvas, not window
         this.mouse.y = e.offsetY;
         this.mouse.pressed = true;
       });
 
-      // mouseup event
       window.addEventListener("mouseup", (e) => {
+        // mouseup event
         this.mouse.x = e.offsetX;
         this.mouse.y = e.offsetY;
         this.mouse.pressed = false;
       });
 
-      // mousemove event
       window.addEventListener("mousemove", (e) => {
+        // mousemove event
         // update mouse only if mouse is pressed
         if (this.mouse.pressed) {
           this.mouse.x = e.offsetX;
@@ -308,40 +278,61 @@ window.addEventListener("load", () => {
       });
     }
 
-    // render -> draw the graphics in the context
     render(context, deltaTime) {
+      // render -> draw the graphics in the context
       if (this.timer > this.interval) {
-        // render a frame
-        context.clearRect(0, 0, this.width, this.height);
-        this.player.draw(context);
-        this.player.update();
-        this.obstacles.forEach((obstacle) => obstacle.draw(context));
-        this.eggs.forEach((egg) => {
-          egg.draw(context);
-          egg.update();
+        context.clearRect(0, 0, this.width, this.height); // clear the canvas
+
+        this.gameObjects = [
+          ...this.eggs,
+          ...this.obstacles,
+          this.player,
+          ...this.enemies,
+        ]; // sequence of rendering
+        this.gameObjects.sort((a, b) => {
+          // sort by vertical position
+          if (a.collisionY < b.collisionY) return -1;
+          else if (a.collisionY > b.collisionY) return 1;
+          else return 0;
+        });
+        this.gameObjects.forEach((object) => {
+          // render the sorted objects
+          object.draw(context);
+          object.update();
         });
         this.timer = 0;
       }
       this.timer += deltaTime;
 
-      // add eggs periodically
       if (this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs) {
+        // add eggs periodically
         this.addEgg();
         this.eggTimer = 0;
       } else this.eggTimer += deltaTime;
     }
 
-    // add eggs
     addEgg() {
+      // add eggs
       this.eggs.push(new Egg(this));
     }
 
-    // create randomized obstacles
+    addEnemy() {
+      // add enemies
+      this.enemies.push(new Enemy(this));
+    }
+
     init() {
+      // create enemies
+      for (let i = 0; i < 3; i++) {
+        this.addEnemy();
+      }
+
+      // create randomized obstacles
       let attempts = 0;
       let isOverlapping = false; // flag for checking overlaps
-      // try to generate obstacles without overlapping
+
       while (this.obstacles.length < this.numberOfObstacles && attempts < 500) {
+        // try to generate obstacles without overlapping
         let testObstacles = new Obstacle(this);
         this.obstacles.forEach((obstacle) => {
           const distance = Math.sqrt(
@@ -387,23 +378,16 @@ window.addEventListener("load", () => {
   class Obstacle {
     constructor(game) {
       this.game = game;
-      // collisionX,Y -> position of the base of the object
-      this.collisionX = Math.random() * this.game.width;
+      this.collisionX = Math.random() * this.game.width; // collisionX,Y -> position of the base of the object
       this.collisionY = Math.random() * this.game.height;
-
       this.collisionRadius = 30; // effective radius of the object
       this.scalingFactor = 0.5; // scaling factor of the obstacle image
-
       this.image = document.getElementById("obstacle"); // get the obstacle image
-
       this.spriteWidth = 250; // the height and width of the sprite obstacle image, this should be known
       this.spriteHeight = 250;
-
       this.width = this.spriteWidth * this.scalingFactor; // the entire obstacle will be scaled to these values
       this.height = this.spriteHeight * this.scalingFactor;
-
-      // select the position of randomized obstacle
-      this.frameX = Math.floor(Math.random() * 4);
+      this.frameX = Math.floor(Math.random() * 4); // select the position of randomized obstacle
       this.frameY = Math.floor(Math.random() * 3);
     }
     draw(context) {
@@ -421,44 +405,104 @@ window.addEventListener("load", () => {
 
       if (this.game.debug) {
         context.beginPath();
-
-        // draw a circle
         context.arc(
+          // draw a circle
           this.collisionX,
           this.collisionY,
           this.collisionRadius,
           0,
           2 * Math.PI
         );
-
-        // save and restore method -> save a state, change some property, draw something with new property, go back to previous state, draw something with previous settings.
-        // Here, context.save() created a checkpoint. then the opacity was changed, and fill context was called, and the fill was done with 50% opacity.
-        // Then context.restore() was called to bring the context back to previous state and opacity was back to 100%. then the stroke was called with 100% opacity.
-
         context.save();
-        // opacity
-        context.globalAlpha = 0.2;
+        context.globalAlpha = 0.2; // opacity
         context.fill();
         context.restore();
         context.stroke();
       }
     }
+
+    update() {}
   }
 
-  // initiate game with Game object
-  const game = new Game(canvas);
+  // enemy object
+  class Enemy {
+    constructor(game) {
+      this.game = game;
+      this.spriteWidth = 140;
+      this.spriteHeight = 260;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionRadius = 30;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
+      this.collisionY =
+        this.game.topMargin +
+        Math.random() * (this.game.height - this.game.topMargin);
+      this.speedX = Math.random() * 3 + 0.5; // speed between 0.5 and 3.5
+      this.image = document.getElementById("toad");
+      this.spriteX;
+      this.spriteY;
+      this.scalingFactor = 0.3;
+    }
+
+    draw(context) {
+      context.drawImage(this.image, this.spriteX, this.spriteY);
+
+      if (this.game.debug) {
+        // draw circle in debug mode
+        context.beginPath();
+        context.arc(
+          // draw an arc
+          this.collisionX,
+          this.collisionY,
+          this.collisionRadius,
+          0,
+          2 * Math.PI
+        );
+        context.save();
+        context.globalAlpha = 0.2; // opacity
+        context.fill();
+        context.restore();
+        context.stroke();
+      }
+    }
+
+    update() {
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 80;
+      this.collisionX -= this.speedX;
+      if (this.spriteX + this.width < 0) {
+        this.collisionX =
+          this.game.width + this.width + (Math.random() * this.game.width) / 2;
+        this.collisionY =
+          this.game.topMargin +
+          Math.random() * (this.game.height - this.game.topMargin);
+      }
+      // check collision with obstacles and player only
+      let collisionObjects = [...this.game.obstacles, this.game.player];
+      collisionObjects.forEach((object) => {
+        let [collision, distance, sumOfRadii, dx, dy] =
+          this.game.checkCollision(this, object);
+        if (collision) {
+          const unit_x = dx / distance;
+          const unit_y = dy / distance;
+          this.collisionX = object.collisionX + (sumOfRadii + 1) * unit_x;
+          this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
+        }
+      });
+    }
+  }
+
+  const game = new Game(canvas); // initiate game with Game object
   game.init(); // initaite obstacles
 
-  let lastTime = 0;
-  // animation handling
+  let lastTime = 0; // animation handling
   function animate(timeStamp) {
     const deltaTime = timeStamp - lastTime; // time interval (ms) between frames
     lastTime = timeStamp;
-    // render the context
-    game.render(ctx, deltaTime);
+    game.render(ctx, deltaTime); // render the context
     window.requestAnimationFrame(animate);
   }
 
-  // call the animation function
-  animate(0);
+  animate(0); // call the animation function
 });
