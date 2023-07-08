@@ -43,6 +43,13 @@ window.addEventListener("load", () => {
       this.frameY = 5;
     }
 
+    restart() {
+      this.collisionX = this.game.width / 2;
+      this.collisionY = this.game.height / 2;
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 100;
+    }
+
     draw(context) {
       // draw the shape in context
       context.drawImage(
@@ -203,11 +210,12 @@ window.addEventListener("load", () => {
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 20;
 
-      // check collision with player, obstacles and enemies
+      // check collision with player, obstacles, larvas and enemies
       let collisionObjects = [
         this.game.player,
         ...this.game.obstacles,
         ...this.game.enemies,
+        ...this.game.hatchlings,
       ];
       collisionObjects.forEach((object) => {
         let [collision, distance, sumOfRadii, dx, dy] =
@@ -312,6 +320,7 @@ window.addEventListener("load", () => {
       // debug
       window.addEventListener("keydown", (e) => {
         if (e.key == "d") this.debug = !this.debug;
+        else if (e.key == "r") this.restart();
       });
     }
 
@@ -395,6 +404,25 @@ window.addEventListener("load", () => {
         );
         context.restore();
       }
+    }
+
+    restart() {
+      // restart the game
+      this.player.restart();
+      this.obstacles = [];
+      this.eggs = [];
+      this.enemies = [];
+      this.hatchlings = [];
+      this.particles = [];
+      this.mouse = {
+        x: this.width / 2,
+        y: this.height / 2,
+        pressed: fase,
+      };
+      this.score = 0;
+      this.lostHatchlings = 0;
+      this.gameOver = false;
+      this.init();
     }
 
     addEgg() {
