@@ -432,7 +432,9 @@ window.addEventListener("load", () => {
 
     addEnemy() {
       // add enemies
-      this.enemies.push(new Enemy(this));
+      if (Math.random < 0.5) {
+        this.enemies.push(new Toadskin(this));
+      } else this.enemies.push(new Barkskin(this));
     }
 
     init() {
@@ -553,22 +555,15 @@ window.addEventListener("load", () => {
   class Enemy {
     constructor(game) {
       this.game = game;
-      this.spriteWidth = 140;
-      this.spriteHeight = 260;
-      this.width = this.spriteWidth;
-      this.height = this.spriteHeight;
       this.collisionRadius = 30;
-      this.collisionX =
-        this.game.width + this.width + (Math.random() * this.game.width) / 2;
       this.collisionY =
         this.game.topMargin +
         Math.random() * (this.game.height - this.game.topMargin);
       this.speedX = Math.random() * 3 + 0.5; // speed between 0.5 and 3.5
-      this.image = document.getElementById("toads");
       this.spriteX;
       this.spriteY;
       this.scalingFactor = 0.3;
-      this.frameX = 0;
+      this.frameX = Math.floor(Math.random() * 2);
       this.frameY = Math.floor(Math.random() * 4);
     }
 
@@ -615,6 +610,7 @@ window.addEventListener("load", () => {
         this.collisionY =
           this.game.topMargin +
           Math.random() * (this.game.height - this.game.topMargin);
+        this.frameX = Math.floor(Math.random() * 2);
         this.frameY = Math.floor(Math.random() * 4);
       }
       // check collision with obstacles and player only
@@ -629,6 +625,33 @@ window.addEventListener("load", () => {
           this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
         }
       });
+    }
+  }
+
+  // enemy skins
+  class Toadskin extends Enemy {
+    constructor(game) {
+      super(game);
+      this.image = document.getElementById("toads");
+      this.spriteWidth = 140;
+      this.spriteHeight = 260;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
+    }
+  }
+
+  class Barkskin extends Enemy {
+    constructor(game) {
+      super(game);
+      this.image = document.getElementById("bark");
+      this.spriteWidth = 183;
+      this.spriteHeight = 280;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
     }
   }
 

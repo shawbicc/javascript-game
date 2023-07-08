@@ -26,6 +26,7 @@
 #egg,
 #toad,
 #larva,
-#toads {
+#toads,
+#bark {
   display: none; /* to hide the obstacels */
 }
