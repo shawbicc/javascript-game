@@ -10,7 +10,7 @@ window.addEventListener("load", () => {
   ctx.fillStyle = "white"; // fill color of the shape drawn
   ctx.lineWidth = 3; // stroke width
   ctx.strokeStyle = "black"; // stroke color
-  ctx.font = "40px Roboto";
+  ctx.font = "40px Bangers";
   ctx.textAlign = "center";
 
   // Player object
@@ -41,6 +41,13 @@ window.addEventListener("load", () => {
       // character facing properties
       this.frameX = 0;
       this.frameY = 5;
+    }
+
+    restart() {
+      this.collisionX = this.game.width / 2;
+      this.collisionY = this.game.height / 2;
+      this.spriteX = this.collisionX - this.width / 2;
+      this.spriteY = this.collisionY - this.height / 2 - 100;
     }
 
     draw(context) {
@@ -203,11 +210,12 @@ window.addEventListener("load", () => {
       this.spriteX = this.collisionX - this.width / 2;
       this.spriteY = this.collisionY - this.height / 2 - 20;
 
-      // check collision with player, obstacles and enemies
+      // check collision with player, obstacles, larvas and enemies
       let collisionObjects = [
         this.game.player,
         ...this.game.obstacles,
         ...this.game.enemies,
+        ...this.game.hatchlings,
       ];
       collisionObjects.forEach((object) => {
         let [collision, distance, sumOfRadii, dx, dy] =
@@ -281,6 +289,10 @@ window.addEventListener("load", () => {
       // animation particle properties
       this.particles = [];
 
+      // game text properties
+      this.winningScore = 5;
+      this.gameOver = false;
+
       // event listeners
       window.addEventListener("mousedown", (e) => {
         // mousedown event
@@ -308,6 +320,7 @@ window.addEventListener("load", () => {
       // debug
       window.addEventListener("keydown", (e) => {
         if (e.key == "d") this.debug = !this.debug;
+        else if (e.key == "r") this.restart();
       });
     }
 
@@ -340,7 +353,11 @@ window.addEventListener("load", () => {
       }
       this.timer += deltaTime;
 
-      if (this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs) {
+      if (
+        this.eggTimer > this.eggInterval &&
+        this.eggs.length < this.maxEggs &&
+        !this.gameOver
+      ) {
         // add eggs periodically
         this.addEgg();
         this.eggTimer = 0;
@@ -355,6 +372,57 @@ window.addEventListener("load", () => {
         context.fillText("Lost: " + this.lostHatchlings, 25, 100);
       }
       context.restore();
+
+      // win, lose message
+      if (this.score >= this.winningScore) {
+        this.gameOver = true;
+        context.save();
+        context.fillStyle = "rgba(0,0,0,0.5)";
+        context.fillRect(0, 0, this.width, this.height);
+        context.fillStyle = "white";
+        context.textAlign = "center";
+        context.shadowOffsetX = 4;
+        context.shadowOffsetY = 4;
+        context.shadowColor = "black";
+        let message1;
+        let message2;
+        if (this.lostHatchlings <= 5) {
+          message1 = "Bullseye!";
+          message2 = "You bullied the bullies!";
+        } else {
+          message1 = "Bullocks!";
+          message2 = `Welp you lost ${this.lostHatchlings} hatchlings`;
+        }
+        context.font = "130px Bangers";
+        context.fillText(message1, this.width / 2, this.height / 2 - 20);
+        context.font = "40px Bangers";
+        context.fillText(message2, this.width / 2, this.height / 2 + 30);
+        context.fillText(
+          "Final score: " + this.score + ". Press 'R' to butt heads again!",
+          this.width / 2,
+          this.height / 2 + 80
+        );
+        context.restore();
+      }
+    }
+
+    restart() {
+      // restart the game
+      this.player.restart();
+      this.obstacles = [];
+      this.eggs = [];
+      this.enemies = [];
+      this.hatchlings = [];
+      this.particles = [];
+      this.mouse = {
+        x: this.width / 2,
+        y: this.height / 2,
+        pressed: fase,
+      };
+      this.score = 0;
+      this.lostHatchlings = 0;
+      this.gameOver = false;
+      this.init();
     }
 
     addEgg() {
@@ -364,7 +432,9 @@ window.addEventListener("load", () => {
 
     addEnemy() {
       // add enemies
-      this.enemies.push(new Enemy(this));
+      if (Math.random < 0.5) {
+        this.enemies.push(new Toadskin(this));
+      } else this.enemies.push(new Barkskin(this));
     }
 
     init() {
@@ -485,22 +555,15 @@ window.addEventListener("load", () => {
   class Enemy {
     constructor(game) {
       this.game = game;
-      this.spriteWidth = 140;
-      this.spriteHeight = 260;
-      this.width = this.spriteWidth;
-      this.height = this.spriteHeight;
       this.collisionRadius = 30;
-      this.collisionX =
-        this.game.width + this.width + (Math.random() * this.game.width) / 2;
       this.collisionY =
         this.game.topMargin +
         Math.random() * (this.game.height - this.game.topMargin);
       this.speedX = Math.random() * 3 + 0.5; // speed between 0.5 and 3.5
-      this.image = document.getElementById("toads");
       this.spriteX;
       this.spriteY;
       this.scalingFactor = 0.3;
-      this.frameX = 0;
+      this.frameX = Math.floor(Math.random() * 2);
       this.frameY = Math.floor(Math.random() * 4);
     }
 
@@ -541,12 +604,13 @@ window.addEventListener("load", () => {
       this.spriteY = this.collisionY - this.height / 2 - 80;
       this.collisionX -= this.speedX;
       // update after enemy passes the screen completely
-      if (this.spriteX + this.width < 0) {
+      if (this.spriteX + this.width < 0 && !this.game.gameOver) {
         this.collisionX =
           this.game.width + this.width + (Math.random() * this.game.width) / 2;
         this.collisionY =
           this.game.topMargin +
           Math.random() * (this.game.height - this.game.topMargin);
+        this.frameX = Math.floor(Math.random() * 2);
         this.frameY = Math.floor(Math.random() * 4);
       }
       // check collision with obstacles and player only
@@ -561,6 +625,33 @@ window.addEventListener("load", () => {
           this.collisionY = object.collisionY + (sumOfRadii + 1) * unit_y;
         }
       });
+    }
+  }
+
+  // enemy skins
+  class Toadskin extends Enemy {
+    constructor(game) {
+      super(game);
+      this.image = document.getElementById("toads");
+      this.spriteWidth = 140;
+      this.spriteHeight = 260;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
+    }
+  }
+
+  class Barkskin extends Enemy {
+    constructor(game) {
+      super(game);
+      this.image = document.getElementById("bark");
+      this.spriteWidth = 183;
+      this.spriteHeight = 280;
+      this.width = this.spriteWidth;
+      this.height = this.spriteHeight;
+      this.collisionX =
+        this.game.width + this.width + (Math.random() * this.game.width) / 2;
     }
   }
 
@@ -625,7 +716,7 @@ window.addEventListener("load", () => {
       if (this.collisionY < this.game.topMargin) {
         this.markedForDeletion = true;
         this.game.removeGameObjects();
-        this.game.score++;
+        if (!this.game.gameOver) this.game.score++; // no score added after game over
 
         // add firefly animation
         for (let i = 0; i < 4; i++) {
@@ -733,7 +824,7 @@ window.addEventListener("load", () => {
     const deltaTime = timeStamp - lastTime; // time interval (ms) between frames
     lastTime = timeStamp;
     game.render(ctx, deltaTime); // render the context
-    window.requestAnimationFrame(animate);
+    if (!game.gameOver) window.requestAnimationFrame(animate);
   }
 
   animate(0); // call the animation function
