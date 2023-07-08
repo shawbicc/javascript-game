@@ -10,7 +10,7 @@ window.addEventListener("load", () => {
   ctx.fillStyle = "white"; // fill color of the shape drawn
   ctx.lineWidth = 3; // stroke width
   ctx.strokeStyle = "black"; // stroke color
-  ctx.font = "40px Roboto";
+  ctx.font = "40px Bangers";
   ctx.textAlign = "center";
 
   // Player object
@@ -281,6 +281,10 @@ window.addEventListener("load", () => {
       // animation particle properties
       this.particles = [];
 
+      // game text properties
+      this.winningScore = 5;
+      this.gameOver = false;
+
       // event listeners
       window.addEventListener("mousedown", (e) => {
         // mousedown event
@@ -340,7 +344,11 @@ window.addEventListener("load", () => {
       }
       this.timer += deltaTime;
 
-      if (this.eggTimer > this.eggInterval && this.eggs.length < this.maxEggs) {
+      if (
+        this.eggTimer > this.eggInterval &&
+        this.eggs.length < this.maxEggs &&
+        !this.gameOver
+      ) {
         // add eggs periodically
         this.addEgg();
         this.eggTimer = 0;
@@ -355,6 +363,38 @@ window.addEventListener("load", () => {
         context.fillText("Lost: " + this.lostHatchlings, 25, 100);
       }
       context.restore();
+
+      // win, lose message
+      if (this.score >= this.winningScore) {
+        this.gameOver = true;
+        context.save();
+        context.fillStyle = "rgba(0,0,0,0.5)";
+        context.fillRect(0, 0, this.width, this.height);
+        context.fillStyle = "white";
+        context.textAlign = "center";
+        context.shadowOffsetX = 4;
+        context.shadowOffsetY = 4;
+        context.shadowColor = "black";
+        let message1;
+        let message2;
+        if (this.lostHatchlings <= 5) {
+          message1 = "Bullseye!";
+          message2 = "You bullied the bullies!";
+        } else {
+          message1 = "Bullocks!";
+          message2 = `Welp you lost ${this.lostHatchlings} hatchlings`;
+        }
+        context.font = "130px Bangers";
+        context.fillText(message1, this.width / 2, this.height / 2 - 20);
+        context.font = "40px Bangers";
+        context.fillText(message2, this.width / 2, this.height / 2 + 30);
+        context.fillText(
+          "Final score: " + this.score + ". Press 'R' to butt heads again!",
+          this.width / 2,
+          this.height / 2 + 80
+        );
+        context.restore();
+      }
     }
 
     addEgg() {
@@ -541,7 +581,7 @@ window.addEventListener("load", () => {
       this.spriteY = this.collisionY - this.height / 2 - 80;
       this.collisionX -= this.speedX;
       // update after enemy passes the screen completely
-      if (this.spriteX + this.width < 0) {
+      if (this.spriteX + this.width < 0 && !this.game.gameOver) {
         this.collisionX =
           this.game.width + this.width + (Math.random() * this.game.width) / 2;
         this.collisionY =
@@ -625,7 +665,7 @@ window.addEventListener("load", () => {
       if (this.collisionY < this.game.topMargin) {
         this.markedForDeletion = true;
         this.game.removeGameObjects();
-        this.game.score++;
+        if (!this.game.gameOver) this.game.score++; // no score added after game over
 
         // add firefly animation
         for (let i = 0; i < 4; i++) {
@@ -733,7 +773,7 @@ window.addEventListener("load", () => {
     const deltaTime = timeStamp - lastTime; // time interval (ms) between frames
     lastTime = timeStamp;
     game.render(ctx, deltaTime); // render the context
-    window.requestAnimationFrame(animate);
+    if (!game.gameOver) window.requestAnimationFrame(animate);
   }
 
   animate(0); // call the animation function
