@@ -41,6 +41,7 @@ window.addEventListener("load", () => {
       // character facing properties
       this.frameX = 0;
       this.frameY = 5;
+      this.maxFrame = 58;
     }
 
     restart() {
@@ -103,7 +104,12 @@ window.addEventListener("load", () => {
       else if (angle < 1.17) this.frameY = 3;
       else if (angle < 1.96) this.frameY = 4;
       else if (angle < 2.74) this.frameY = 5;
-
+      //sprite frames rendering
+      if (this.frameX < this.maxFrame) {
+        this.frameX++;
+      } else {
+        this.frameX = 0;
+      }
       // technique 1 -> p controller
       // this.speedX = this.dx;
       // this.speedY = this.dy;
@@ -252,7 +258,7 @@ window.addEventListener("load", () => {
       this.height = this.canvas.height; // height and width of the game
       this.width = this.canvas.width;
       this.player = new Player(this); // instance of the Player object
-      this.debug = true; // debugging
+      this.debug = false; // debugging
       this.score = 0;
 
       this.mouse = {
@@ -290,7 +296,7 @@ window.addEventListener("load", () => {
       this.particles = [];
 
       // game text properties
-      this.winningScore = 5;
+      this.winningScore = 20;
       this.gameOver = false;
 
       // event listeners
@@ -321,9 +327,17 @@ window.addEventListener("load", () => {
       window.addEventListener("keydown", (e) => {
         if (e.key == "d") this.debug = !this.debug;
         else if (e.key == "r") this.restart();
+        else if (e.key == "f") this.toggleFullScreen();
       });
     }
 
+    toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
     render(context, deltaTime) {
       // render -> draw the graphics in the context
       if (this.timer > this.interval) {
@@ -432,7 +446,7 @@ window.addEventListener("load", () => {
 
     addEnemy() {
       // add enemies
-      if (Math.random < 0.5) {
+      if (Math.random() < 0.5) {
         this.enemies.push(new Toadskin(this));
       } else this.enemies.push(new Barkskin(this));
     }
@@ -563,8 +577,9 @@ window.addEventListener("load", () => {
       this.spriteX;
       this.spriteY;
       this.scalingFactor = 0.3;
-      this.frameX = Math.floor(Math.random() * 2);
+      this.frameX = 0;
       this.frameY = Math.floor(Math.random() * 4);
+      this.maxFrame = 38;
     }
 
     draw(context) {
@@ -600,8 +615,15 @@ window.addEventListener("load", () => {
     }
 
     update() {
+      // larva animation
+      if (this.frameX < this.maxFrame) {
+        this.frameX++;
+      } else {
+        this.frameX = 0;
+      }
+
       this.spriteX = this.collisionX - this.width / 2;
-      this.spriteY = this.collisionY - this.height / 2 - 80;
+      // this.spriteY = this.collisionY - this.height / 2 - 80;  // will be updated in individual enemy class
       this.collisionX -= this.speedX;
       // update after enemy passes the screen completely
       if (this.spriteX + this.width < 0 && !this.game.gameOver) {
@@ -632,26 +654,36 @@ window.addEventListener("load", () => {
   class Toadskin extends Enemy {
     constructor(game) {
       super(game);
-      this.image = document.getElementById("toads");
-      this.spriteWidth = 140;
-      this.spriteHeight = 260;
+      this.image = document.getElementById("toadskin");
+      this.spriteWidth = 154;
+      this.spriteHeight = 238;
       this.width = this.spriteWidth;
       this.height = this.spriteHeight;
       this.collisionX =
         this.game.width + this.width + (Math.random() * this.game.width) / 2;
+    }
+
+    update() {
+      super.update();
+      this.spriteY = this.collisionY - this.height / 2 - 90; // hitbox height
     }
   }
 
   class Barkskin extends Enemy {
     constructor(game) {
       super(game);
-      this.image = document.getElementById("bark");
+      this.image = document.getElementById("barkskin");
       this.spriteWidth = 183;
       this.spriteHeight = 280;
       this.width = this.spriteWidth;
       this.height = this.spriteHeight;
       this.collisionX =
         this.game.width + this.width + (Math.random() * this.game.width) / 2;
+    }
+
+    update() {
+      super.update();
+      this.spriteY = this.collisionY - this.height / 2 - 90; // hitbox height
     }
   }
 
@@ -662,7 +694,7 @@ window.addEventListener("load", () => {
       this.collisionX = x;
       this.collisionY = y;
       this.collisionRadius = 30;
-      this.image = document.getElementById("larva");
+      this.image = document.getElementById("larva_sprite");
       this.spriteWidth = 150;
       this.spriteHeight = 150;
       this.width = this.spriteWidth;
@@ -673,6 +705,7 @@ window.addEventListener("load", () => {
       this.markedForDeletion = false;
       this.frameX = 0;
       this.frameY = Math.floor(Math.random() * 2);
+      this.maxFrame = 38;
     }
 
     draw(context) {
@@ -724,6 +757,13 @@ window.addEventListener("load", () => {
             new Firefly(this.game, this.collisionX, this.collisionY, "yellow")
           );
         }
+      }
+
+      // larva animation
+      if (this.frameX < this.maxFrame) {
+        this.frameX++;
+      } else {
+        this.frameX = 0;
       }
 
       // check collision with player, obstacles

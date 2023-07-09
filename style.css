@@ -27,6 +27,9 @@
 #toad,
 #larva,
 #toads,
-#bark {
+#bark,
+#larva_sprite,
+#barkskin,
+#toadskin {
   display: none; /* to hide the obstacels */
 }
